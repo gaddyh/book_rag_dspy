@@ -1,25 +1,28 @@
 import json
-import os
-import sys
 from pathlib import Path
 
 import fitz  # PyMuPDF
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Add src to Python path if not already there
-src_path = Path("src").resolve()
-if str(src_path) not in sys.path:
-    sys.path.insert(0, str(src_path))
 
 from book_rag.chunker import TextChunk, chunk_text
 
 
-# Get project root (script is in src/book_rag/, so go up 2 levels)
-PROJECT_ROOT = Path(__file__).parent.parent.parent
-RAW_PDF_PATH = PROJECT_ROOT / "data" / "raw" / "30_agents.pdf"
-OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "chunks.jsonl"
+RAW_PDF_PATH = Path("data/raw/30_agents.pdf")
+OUTPUT_PATH = Path("data/processed/chunks.jsonl")
+
+
+def count_visual_image_blocks(page: fitz.Page) -> int:
+    """
+    Count visual image blocks on a page.
+
+    This is better than page.get_images(full=True), because get_images()
+    can count reused/internal PDF image resources and produce misleading
+    numbers like 134 images on many pages.
+    """
+    page_dict = page.get_text("dict")
+    blocks = page_dict.get("blocks", [])
+
+    return sum(1 for block in blocks if block.get("type") == 1)
+
 
 def extract_chunks_from_pdf(pdf_path: Path) -> list[TextChunk]:
     if not pdf_path.exists():
@@ -33,12 +36,18 @@ def extract_chunks_from_pdf(pdf_path: Path) -> list[TextChunk]:
     for page_index in range(len(doc)):
         page = doc[page_index]
         page_number = page_index + 1
+
         text = page.get_text()
+
+        image_count = count_visual_image_blocks(page)
+        has_images = image_count > 0
 
         page_chunks = chunk_text(
             text=text,
             source=source_name,
             page_number=page_number,
+            has_images=has_images,
+            image_count=image_count,
         )
 
         all_chunks.extend(page_chunks)
@@ -58,9 +67,9 @@ def main() -> None:
     chunks = extract_chunks_from_pdf(RAW_PDF_PATH)
     save_chunks(chunks, OUTPUT_PATH)
 
-    print(f"PDF: {RAW_PDF_PATH}")
+    print(f"PDF: {RAW_PDF_PATH.resolve()}")
     print(f"Chunks created: {len(chunks)}")
-    print(f"Saved to: {OUTPUT_PATH}")
+    print(f"Saved to: {OUTPUT_PATH.resolve()}")
 
     if chunks:
         print("\nFirst chunk preview:")
