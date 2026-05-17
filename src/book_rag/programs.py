@@ -1,6 +1,6 @@
 import dspy
 
-from book_rag.retriever import BookRetriever
+from book_rag.retriever.retriever import BookRetriever
 from book_rag.signatures import AnswerFromBook
 
 

@@ -3,9 +3,9 @@ from pathlib import Path
 
 import dspy
 
-from book_rag.retriever import BookRetriever
-from book_rag.retriever_metrics import RetrieverMetricConfig
-from book_rag.retriever_metrics_llm import (
+from book_rag.retriever.retriever import BookRetriever
+from book_rag.retriever.retriever_metrics import RetrieverMetricConfig
+from book_rag.retriever.retriever_metrics_llm import (
     LLMRetrieverMetricResult,
     JudgeRetrievedChunk,
     calculate_llm_retriever_metrics,
@@ -178,7 +178,7 @@ def run_matrix() -> None:
     if not CHUNKS_PATH.exists():
         raise FileNotFoundError(
             f"Missing chunks: {CHUNKS_PATH}. "
-            f"Run: PYTHONPATH=src python -m book_rag.ingest_unstructured"
+            f"Run: PYTHONPATH=src python -m book_rag.ingest.ingest_unstructured"
         )
 
     configure_dspy_for_metrics()

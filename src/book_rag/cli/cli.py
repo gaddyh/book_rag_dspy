@@ -5,7 +5,7 @@ import dspy
 from dotenv import load_dotenv
 
 from book_rag.programs import BookRAG
-from book_rag.retriever import BookRetriever
+from book_rag.retriever.retriever import BookRetriever
 
 
 def configure_dspy() -> None:

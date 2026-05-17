@@ -6,7 +6,7 @@ import dspy
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from book_rag.retriever_metrics import (
+from book_rag.retriever.retriever_metrics import (
     RetrieverMetricConfig,
     score_bad_source,
     score_chunk_relevance,

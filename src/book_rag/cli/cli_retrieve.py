@@ -1,8 +1,8 @@
 import sys
 from dataclasses import dataclass
 
-from book_rag.retriever import BookRetriever
-from book_rag.retriever_metrics import (
+from book_rag.retriever.retriever import BookRetriever
+from book_rag.retriever.retriever_metrics import (
     RetrieverMetricConfig,
     RetrieverMetricResult,
     calculate_retriever_metrics,

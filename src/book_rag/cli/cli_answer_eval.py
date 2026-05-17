@@ -9,8 +9,8 @@ from book_rag.answer_metrics_llm import (
     calculate_structured_answer_metrics,
 )
 from book_rag.programs import BookRAG
-from book_rag.retriever import BookRetriever
-from book_rag.retriever_metrics_llm import configure_dspy_for_metrics
+from book_rag.retriever.retriever import BookRetriever
+from book_rag.retriever.retriever_metrics_llm import configure_dspy_for_metrics
 
 
 @dataclass
@@ -269,7 +269,7 @@ def run_answer_eval() -> None:
     if not CHUNKS_PATH.exists():
         raise FileNotFoundError(
             f"Missing chunks: {CHUNKS_PATH}. "
-            f"Run: PYTHONPATH=src python -m book_rag.ingest_unstructured"
+            f"Run: PYTHONPATH=src python -m book_rag.ingest.ingest_unstructured"
         )
 
     configure_dspy_for_metrics()
