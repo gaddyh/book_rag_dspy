@@ -51,9 +51,7 @@ class BookRetriever:
             k=k,
         )
 
-    def search(self, question: str, k: int | None = None) -> list[dict[str, Any]]:
-        k = k or self.k
-
+    def search(self, question: str) -> list[dict[str, Any]]:
         result = self.retriever(question)
 
         # DSPy's Embeddings retriever usually returns:
