@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import dspy
 
@@ -6,6 +7,7 @@ from book_rag.retriever import BookRetriever
 from book_rag.retriever_metrics import RetrieverMetricConfig
 from book_rag.retriever_metrics_llm import (
     LLMRetrieverMetricResult,
+    JudgeRetrievedChunk,
     calculate_llm_retriever_metrics,
     configure_dspy_for_metrics,
 )
@@ -16,6 +18,9 @@ class EvalQuestion:
     id: str
     question: str
     config: RetrieverMetricConfig
+
+
+CHUNKS_PATH = Path("data/processed/chunks_unstructured.jsonl")
 
 
 QUESTIONS = [
@@ -119,7 +124,7 @@ def print_chunk_scores(result: LLMRetrieverMetricResult) -> None:
 
 
 def print_summary_table(rows: list[dict]) -> None:
-    print("\n\nLLM SUMMARY TABLE")
+    print("\n\nUNSTRUCTURED RETRIEVER SUMMARY TABLE")
     print("=" * 150)
 
     print(
@@ -170,11 +175,13 @@ def print_summary_table(rows: list[dict]) -> None:
 
 
 def run_matrix() -> None:
+    if not CHUNKS_PATH.exists():
+        raise FileNotFoundError(
+            f"Missing chunks: {CHUNKS_PATH}. "
+            f"Run: PYTHONPATH=src python -m book_rag.ingest_unstructured"
+        )
+
     configure_dspy_for_metrics()
-
-    # Reuse the same judge object across all chunks.
-    from book_rag.retriever_metrics_llm import JudgeRetrievedChunk
-
     judge = dspy.Predict(JudgeRetrievedChunk)
 
     rows: list[dict] = []
@@ -182,12 +189,15 @@ def run_matrix() -> None:
     for question in QUESTIONS:
         for k in K_VALUES:
             print("\n" + "=" * 120)
-            print(f"{question.id} | k={k}")
+            print(f"unstructured_fast | {question.id} | k={k}")
             print(question.question)
             print("=" * 120)
 
-            retriever = BookRetriever(k=k)
-            chunks = retriever.search(question.question)
+            retriever = BookRetriever(
+                chunks_path=CHUNKS_PATH,
+                k=k,
+            )
+            chunks = retriever.search(question.question, k=k)
 
             result = calculate_llm_retriever_metrics(
                 question=question.question,

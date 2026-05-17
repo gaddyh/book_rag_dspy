@@ -5,13 +5,13 @@ from typing import Any
 import dspy
 
 
-CHUNKS_PATH = Path("data/processed/chunks.jsonl")
+CHUNKS_PATH = Path("data/processed/chunks_unstructured.jsonl")
 
 
 def load_chunks(path: Path = CHUNKS_PATH) -> list[dict[str, Any]]:
     if not path.exists():
         raise FileNotFoundError(
-            f"Chunks file not found: {path}. Run ingest first."
+            f"Chunks file not found: {path}. Run ingestion first."
         )
 
     chunks: list[dict[str, Any]] = []
@@ -25,6 +25,12 @@ def load_chunks(path: Path = CHUNKS_PATH) -> list[dict[str, Any]]:
 
 
 def format_chunk_for_embedding(chunk: dict[str, Any]) -> str:
+    """
+    Text used for embeddings.
+
+    For unstructured chunks, the text already includes useful context like:
+    page, section, element types, etc.
+    """
     return chunk["text"]
 
 
@@ -35,6 +41,7 @@ class BookRetriever:
         embedder_model: str = "openai/text-embedding-3-small",
         k: int = 5,
     ) -> None:
+        self.chunks_path = chunks_path
         self.chunks = load_chunks(chunks_path)
         self.k = k
 
@@ -51,11 +58,11 @@ class BookRetriever:
             k=k,
         )
 
-    def search(self, question: str) -> list[dict[str, Any]]:
+    def search(self, question: str, k: int | None = None) -> list[dict[str, Any]]:
+        k = k or self.k
+
         result = self.retriever(question)
 
-        # DSPy's Embeddings retriever usually returns:
-        # Prediction(passages=[...], indices=[...])
         passages = getattr(result, "passages", None)
         indices = getattr(result, "indices", None)
 
@@ -72,8 +79,6 @@ class BookRetriever:
         matched_chunks: list[dict[str, Any]] = []
 
         for position, passage in enumerate(passages):
-            chunk: dict[str, Any]
-
             if indices is not None and position < len(indices):
                 corpus_index = indices[position]
                 chunk = dict(self.chunks[corpus_index])
@@ -90,6 +95,7 @@ class BookRetriever:
 
             chunk["retrieved_text"] = passage
             chunk["rank"] = position + 1
+            chunk["chunks_path"] = str(self.chunks_path)
 
             matched_chunks.append(chunk)
 
