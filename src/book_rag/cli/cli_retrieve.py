@@ -70,7 +70,7 @@ QUESTIONS = [
 K_VALUES = [5, 10, 20]
 
 
-def print_results(question: str, k: int, results: list[dict]) -> None:
+def print_results(question: str, k: int, results) -> None:
     print("\nQUESTION")
     print("-" * 80)
     print(question)
@@ -80,11 +80,11 @@ def print_results(question: str, k: int, results: list[dict]) -> None:
     print("-" * 80)
 
     for i, chunk in enumerate(results, start=1):
-        print(f"\n[{i}] {chunk['chunk_id']}")
-        print(f"Page: {chunk['page_start']}")
-        print(f"Images: {chunk.get('has_images')} ({chunk.get('image_count')})")
+        print(f"\n[{i}] {chunk.chunk_id}")
+        print(f"Page: {chunk.page_start}")
+        print(f"Images: {chunk.has_images} ({chunk.image_count})")
         print()
-        print(chunk["text"][:700])
+        print(chunk.text[:700])
         print("-" * 80)
 
 

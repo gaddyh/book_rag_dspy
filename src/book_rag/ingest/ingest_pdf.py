@@ -3,7 +3,8 @@ from pathlib import Path
 
 import fitz  # PyMuPDF
 
-from book_rag.chunker import TextChunk, chunk_text
+from book_rag.chunker import chunk_text
+from book_rag.core.models import BookChunk
 
 
 RAW_PDF_PATH = Path("data/raw/30_agents.pdf")
@@ -24,12 +25,12 @@ def count_visual_image_blocks(page: fitz.Page) -> int:
     return sum(1 for block in blocks if block.get("type") == 1)
 
 
-def extract_chunks_from_pdf(pdf_path: Path) -> list[TextChunk]:
+def extract_chunks_from_pdf(pdf_path: Path) -> list[BookChunk]:
     if not pdf_path.exists():
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
     doc = fitz.open(pdf_path)
-    all_chunks: list[TextChunk] = []
+    all_chunks: list[BookChunk] = []
 
     source_name = pdf_path.name
 
@@ -55,7 +56,7 @@ def extract_chunks_from_pdf(pdf_path: Path) -> list[TextChunk]:
     return all_chunks
 
 
-def save_chunks(chunks: list[TextChunk], output_path: Path) -> None:
+def save_chunks(chunks: list[BookChunk], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with output_path.open("w", encoding="utf-8") as f:

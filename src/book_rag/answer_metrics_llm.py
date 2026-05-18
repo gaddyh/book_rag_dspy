@@ -4,6 +4,8 @@ from typing import Any, Literal
 import dspy
 from pydantic import BaseModel, Field
 
+from book_rag.core.models import BookChunk
+
 
 ClaimSupportStatus = Literal["supported", "partial", "unsupported"]
 
@@ -311,16 +313,16 @@ def status_to_score(status: ClaimSupportStatus, model_score: float) -> float:
     return min(0.25, model_score)
 
 
-def stringify_retrieved_context(chunks: list[dict[str, Any]]) -> str:
+def stringify_retrieved_context(chunks: list[BookChunk]) -> str:
     parts: list[str] = []
 
     for chunk in chunks:
-        chunk_id = chunk.get("chunk_id", "unknown")
-        page_start = chunk.get("page_start")
-        page_end = chunk.get("page_end")
-        has_images = chunk.get("has_images", False)
-        image_count = chunk.get("image_count", 0)
-        text = chunk.get("text", "")
+        chunk_id = chunk.chunk_id
+        page_start = chunk.page_start
+        page_end = chunk.page_end
+        has_images = chunk.has_images
+        image_count = chunk.image_count
+        text = chunk.text
 
         if page_start is not None and page_end is not None and page_end != page_start:
             page_label = f"pages {page_start}-{page_end}"
@@ -337,13 +339,13 @@ def stringify_retrieved_context(chunks: list[dict[str, Any]]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def stringify_retrieved_sources(chunks: list[dict[str, Any]]) -> list[str]:
+def stringify_retrieved_sources(chunks: list[BookChunk]) -> list[str]:
     sources: list[str] = []
 
     for chunk in chunks:
-        chunk_id = chunk.get("chunk_id", "unknown")
-        page_start = chunk.get("page_start")
-        page_end = chunk.get("page_end")
+        chunk_id = chunk.chunk_id
+        page_start = chunk.page_start
+        page_end = chunk.page_end
 
         if page_start is not None and page_end is not None and page_end != page_start:
             page_label = f"pages {page_start}-{page_end}"
@@ -357,11 +359,10 @@ def stringify_retrieved_sources(chunks: list[dict[str, Any]]) -> list[str]:
     return sources
 
 
-def get_retrieved_chunk_ids(chunks: list[dict[str, Any]]) -> set[str]:
+def get_retrieved_chunk_ids(chunks: list[BookChunk]) -> set[str]:
     return {
-        str(chunk.get("chunk_id"))
+        chunk.chunk_id
         for chunk in chunks
-        if chunk.get("chunk_id")
     }
 
 
@@ -693,7 +694,7 @@ def calculate_structured_answer_metrics(
     design_takeaway: str,
     caveats: list[str],
     final_answer: str,
-    chunks: list[dict[str, Any]],
+    chunks: list[BookChunk],
     judge: dspy.Predict | None = None,
 ) -> StructuredAnswerMetricResult:
     if judge is None:

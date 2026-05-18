@@ -1,16 +1,6 @@
 import re
-from dataclasses import dataclass
 
-
-@dataclass
-class TextChunk:
-    chunk_id: str
-    text: str
-    source: str
-    page_start: int
-    page_end: int
-    has_images: bool = False
-    image_count: int = 0
+from book_rag.core.models import BookChunk
 
 
 def clean_pdf_text(text: str) -> str:
@@ -30,7 +20,7 @@ def chunk_text(
     overlap: int = 200,
     has_images: bool = False,
     image_count: int = 0,
-) -> list[TextChunk]:
+) -> list[BookChunk]:
     """
     Split one page of text into overlapping chunks.
 
@@ -46,7 +36,7 @@ def chunk_text(
     if overlap >= chunk_size:
         raise ValueError("overlap must be smaller than chunk_size")
 
-    chunks: list[TextChunk] = []
+    chunks: list[BookChunk] = []
     start = 0
     index = 0
 
@@ -56,7 +46,7 @@ def chunk_text(
 
         if chunk:
             chunks.append(
-                TextChunk(
+                BookChunk(
                     chunk_id=f"{source}:page-{page_number}:chunk-{index}",
                     text=chunk,
                     source=source,

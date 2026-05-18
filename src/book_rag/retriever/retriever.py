@@ -4,11 +4,13 @@ from typing import Any
 
 import dspy
 
+from book_rag.core.models import BookChunk
+
 
 CHUNKS_PATH = Path("data/processed/chunks_unstructured.jsonl")
 
 
-def load_chunks(path: Path = CHUNKS_PATH) -> list[dict[str, Any]]:
+def load_chunks(path: Path = CHUNKS_PATH) -> list[dict[str, Any]]:  # raw dicts from JSONL
     if not path.exists():
         raise FileNotFoundError(
             f"Chunks file not found: {path}. Run ingestion first."
@@ -58,7 +60,7 @@ class BookRetriever:
             k=k,
         )
 
-    def search(self, question: str, k: int | None = None) -> list[dict[str, Any]]:
+    def search(self, question: str, k: int | None = None) -> list[BookChunk]:
         k = k or self.k
 
         result = self.retriever(question)
@@ -76,14 +78,16 @@ class BookRetriever:
                 f"Value: {result}"
             )
 
-        matched_chunks: list[dict[str, Any]] = []
+        _known_fields = {"chunk_id", "text", "source", "page_start", "page_end", "has_images", "image_count"}
+
+        matched_chunks: list[BookChunk] = []
 
         for position, passage in enumerate(passages):
             if indices is not None and position < len(indices):
                 corpus_index = indices[position]
-                chunk = dict(self.chunks[corpus_index])
+                raw = self.chunks[corpus_index]
             else:
-                chunk = {
+                raw = {
                     "chunk_id": "unknown",
                     "text": passage,
                     "source": "unknown",
@@ -93,10 +97,21 @@ class BookRetriever:
                     "image_count": 0,
                 }
 
-            chunk["retrieved_text"] = passage
-            chunk["rank"] = position + 1
-            chunk["chunks_path"] = str(self.chunks_path)
+            extra = {key: v for key, v in raw.items() if key not in _known_fields}
+            extra["chunks_path"] = str(self.chunks_path)
 
-            matched_chunks.append(chunk)
+            matched_chunks.append(
+                BookChunk(
+                    chunk_id=raw.get("chunk_id", "unknown"),
+                    text=raw.get("text", passage),
+                    source=raw.get("source", "unknown"),
+                    page_start=raw.get("page_start"),
+                    page_end=raw.get("page_end"),
+                    has_images=raw.get("has_images", False),
+                    image_count=raw.get("image_count", 0),
+                    rank=position + 1,
+                    metadata=extra,
+                )
+            )
 
         return matched_chunks

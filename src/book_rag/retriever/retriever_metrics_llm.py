@@ -6,6 +6,7 @@ import dspy
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
+from book_rag.core.models import BookChunk
 from book_rag.retriever.retriever_metrics import (
     RetrieverMetricConfig,
     score_bad_source,
@@ -192,7 +193,7 @@ def normalize_problems(problems: object) -> list[str]:
 
 
 def deterministic_source_quality(
-    chunk: dict,
+    chunk: BookChunk,
     config: RetrieverMetricConfig,
 ) -> tuple[float, list[str]]:
     is_bad, reasons = score_bad_source(
@@ -221,13 +222,13 @@ def deterministic_source_quality(
 def score_one_chunk_with_llm(
     judge: dspy.Predict,
     question: str,
-    chunk: dict,
+    chunk: BookChunk,
     rank: int,
     config: RetrieverMetricConfig,
 ) -> LLMChunkJudgeScore:
-    text = chunk.get("text", "")
-    page = chunk.get("page_start")
-    chunk_id = chunk.get("chunk_id", "unknown")
+    text = chunk.text
+    page = chunk.page_start
+    chunk_id = chunk.chunk_id
 
     _, relevance_hits = score_chunk_relevance(
         text=text,
@@ -243,8 +244,8 @@ def score_one_chunk_with_llm(
         "chunk_id": chunk_id,
         "page": page,
         "rank": rank,
-        "has_images": chunk.get("has_images"),
-        "image_count": chunk.get("image_count"),
+        "has_images": chunk.has_images,
+        "image_count": chunk.image_count,
         "deterministic_bad_source_reasons": bad_source_reasons,
         "keyword_hits": relevance_hits,
     }
@@ -289,7 +290,7 @@ def score_one_chunk_with_llm(
 
 def calculate_llm_retriever_metrics(
     question: str,
-    chunks: list[dict],
+    chunks: list[BookChunk],
     config: RetrieverMetricConfig,
     judge: dspy.Predict | None = None,
 ) -> LLMRetrieverMetricResult:

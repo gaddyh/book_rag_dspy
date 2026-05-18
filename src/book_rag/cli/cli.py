@@ -4,7 +4,8 @@ import sys
 import dspy
 from dotenv import load_dotenv
 
-from book_rag.programs import BookRAG
+from book_rag.answering.rag_program import BookRAG
+from book_rag.context.context_builder import ChunkOnlyContextBuilder
 from book_rag.retriever.retriever import BookRetriever
 
 
@@ -104,7 +105,11 @@ def main() -> None:
     configure_dspy()
 
     retriever = BookRetriever(k=5)
-    rag = BookRAG(retriever=retriever, k=5)
+    rag = BookRAG(
+        retriever=retriever,
+        context_builder=ChunkOnlyContextBuilder(),
+        k=5,
+    )
 
     prediction = rag(question=question)
 

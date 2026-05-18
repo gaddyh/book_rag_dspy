@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from book_rag.core.models import BookChunk
+
 
 class RetrieverMetricConfig(BaseModel):
     relevance_keywords: list[str] = Field(default_factory=list)
@@ -58,12 +60,12 @@ def score_chunk_relevance(
 
 
 def score_bad_source(
-    chunk: dict,
+    chunk: BookChunk,
     bad_page_max: int,
     min_chunk_chars: int,
 ) -> tuple[bool, list[str]]:
-    text = normalize(chunk.get("text", ""))
-    page = chunk.get("page_start")
+    text = normalize(chunk.text)
+    page = chunk.page_start
 
     reasons: list[str] = []
 
@@ -87,13 +89,13 @@ def score_bad_source(
 
 def calculate_retriever_metrics(
     question: str,
-    chunks: list[dict],
+    chunks: list[BookChunk],
     config: RetrieverMetricConfig,
 ) -> RetrieverMetricResult:
     chunk_scores: list[RetrievedChunkScore] = []
 
     for index, chunk in enumerate(chunks, start=1):
-        text = chunk.get("text", "")
+        text = chunk.text
 
         is_relevant, relevance_hits = score_chunk_relevance(
             text=text,
@@ -108,8 +110,8 @@ def calculate_retriever_metrics(
 
         chunk_scores.append(
             RetrievedChunkScore(
-                chunk_id=chunk.get("chunk_id", "unknown"),
-                page=chunk.get("page_start"),
+                chunk_id=chunk.chunk_id,
+                page=chunk.page_start,
                 rank=index,
                 is_relevant=is_relevant,
                 relevance_hits=relevance_hits,

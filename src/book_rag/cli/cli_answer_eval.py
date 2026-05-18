@@ -1,3 +1,4 @@
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -7,6 +8,10 @@ from book_rag.answer_metrics_llm import (
     StructuredAnswerMetricResult,
     StructuredRAGAnswerJudge,
     calculate_structured_answer_metrics,
+)
+from book_rag.evaluation.artifacts import (
+    StructuredEvalResult,
+    save_answer_eval_artifacts,
 )
 from book_rag.programs import BookRAG
 from book_rag.retriever.retriever import BookRetriever
@@ -265,7 +270,7 @@ def print_average(rows: list[dict]) -> None:
     )
 
 
-def run_answer_eval() -> None:
+def run_answer_eval(run_name: str | None = None) -> None:
     if not CHUNKS_PATH.exists():
         raise FileNotFoundError(
             f"Missing chunks: {CHUNKS_PATH}. "
@@ -277,6 +282,7 @@ def run_answer_eval() -> None:
     judge = dspy.Predict(StructuredRAGAnswerJudge)
 
     rows: list[dict] = []
+    all_results: list[StructuredEvalResult] = []
 
     for question in QUESTIONS:
         for k in K_VALUES:
@@ -313,6 +319,14 @@ def run_answer_eval() -> None:
 
             print_answer_metrics(answer_result)
 
+            all_results.append(
+                StructuredEvalResult(
+                    question_id=question.id,
+                    k=k,
+                    metrics=answer_result,
+                )
+            )
+
             valid_source_count = sum(
                 1 for claim in answer_result.claim_scores if claim.has_valid_source
             )
@@ -342,9 +356,23 @@ def run_answer_eval() -> None:
     print_best_by_question(rows)
     print_average(rows)
 
+    run_dir = save_answer_eval_artifacts(
+        results=all_results,
+        run_name=run_name,
+    )
+    print(f"\nSaved evaluation artifacts to: {run_dir}")
+
 
 def main() -> None:
-    run_answer_eval()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--run-name",
+        default=None,
+        help="Optional name for the evaluation artifact directory.",
+    )
+    args = parser.parse_args()
+
+    run_answer_eval(run_name=args.run_name)
 
 
 if __name__ == "__main__":
