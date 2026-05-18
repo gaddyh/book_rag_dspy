@@ -79,6 +79,12 @@ Best observed configurations:
 More retrieved context is not automatically better.  
 k=20 sometimes introduces extra unsupported or weakly cited claims, while k=5 or k=10 can produce cleaner answers.
 
+**Run artifacts** (`20260519_004235`):
+
+- [`report.md`](reports/answer_eval/20260519_004235/report.md) — human-readable summary with per-run metrics
+- [`summary.csv`](reports/answer_eval/20260519_004235/summary.csv) — flat table for comparison
+- [`results.json`](reports/answer_eval/20260519_004235/results.json) — full structured evaluation output
+
 ---
 
 ## What this repo showcases
